@@ -2,6 +2,8 @@
 
 ## Design Pattern Class Final Project
 
+## 한경대학교 컴퓨터공학과 2013250004 권주영
+
 ## How to Install
 
 ### 1. npm init
