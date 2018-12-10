@@ -1,3 +1,5 @@
+var express    = require('express');
+var app = express();
 var mysql      = require('mysql');
 var fs = require('fs');
 var path = require('path');
@@ -5,6 +7,8 @@ var dbconfig   = require('../../config/database.js');
 var dbconfig_comment   = require('../../config/database_comment.js');
 var connection = mysql.createConnection(dbconfig);
 var connection_comment = mysql.createConnection(dbconfig_comment);
+var bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended : false }));
 
 exports.created_folder_process = function(request, response) {
     var foldername = request.body.foldername;
@@ -30,8 +34,7 @@ exports.created_folder_process = function(request, response) {
           comment_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
           comment_password varchar(50) DEFAULT NULL)`, function(error2, result) {
 
-            response.writeHead(302, {Location: `/`});
-            response.end();
+            response.send(`<script>alert("게시판이 생성 되었습니다.");location.href="/";</script>`);
         });
       });
 }
@@ -65,13 +68,14 @@ exports.deleted_folder_process = function(request, response) {
 }
   
 exports.upload_process = function(request, response) {
-    // posts.upload_process(request, response);
+    var filteredpage = request.params.page
+    
     var title = request.body.title;
     var author = request.body.author;
     var board = request.body.board;
     var description = request.body.description;
     var password = request.body.password;
-    
+    console.log(request.file)
     if(request.file) {
       var filenames = request.file.filename;
     } else {
@@ -80,15 +84,14 @@ exports.upload_process = function(request, response) {
     
     var descriptions = description.toString().replace(/\n/gi,"<br><br>"); 
     connection.query(`INSERT INTO \`${board}\` (title, author, board, filepath, password) VALUES (?, ?, ?, ?, ?)`, [title, author, descriptions, filenames, password], function(err, tables) {
-      response.writeHead(302, {Location: `/${board}`});
-      response.end();
+        response.send(`<script>alert("글이 업로드 되었습니다.");location.href="/${filteredpage}/";</script>`);
     });  
 }
   
 exports.page_pageId_comment_upload = function(request, response) {
     // posts.comment_process(request, response);
-    var filteredpage = path.parse(request.params.page).base;
-    var filteredId = path.parse(request.params.pageId).base;
+    var filteredpage = request.params.page;
+    var filteredId = request.params.pageId;
   
     var commenter = request.body.commenter;
     var passwords = request.body.password;
@@ -104,41 +107,24 @@ exports.page_pageId_comment_upload = function(request, response) {
         if(result[0].isChk === 0) {
           var board_comment_num = 1;
           connection_comment.query(`INSERT INTO \`${comment_table}\` (board_num, board_comment_num, commenter, comment_board, comment_password) VALUES (?, ?, ?, ?, ?)`, [board_num, board_comment_num, commenter, comments, passwords], function(err, rows) {
-            response.writeHead(302, {Location: `/${filteredpage}/${filteredId}`});
-            response.end();
+            response.send(`<script>alert("댓글이 입력되었습니다.");location.href="/${filteredpage}/${filteredId}/";</script>`);
           });
         } else {
           connection_comment.query(`SELECT board_num, board_comment_num FROM \`${comment_table}\` WHERE board_num = ${filteredId} ORDER BY board_comment_num DESC`, function(err, result2) {
             var board_comment_num = result2[0].board_comment_num + 1;
             connection_comment.query(`INSERT INTO \`${comment_table}\` (board_num, board_comment_num, commenter, comment_board, comment_password) VALUES (?, ?, ?, ?, ?)`, [board_num, board_comment_num, commenter, comments, passwords], function(err, rows) {
-              response.writeHead(302, {Location: `/${filteredpage}/${filteredId}`});
-              response.end();
+                response.send(`<script>alert("댓글이 입력되었습니다.");location.href="/${filteredpage}/${filteredId}/";</script>`);
             });
           });
-        }
-  
-  
-  
-  
-  
-        // connection_comment.query(`INSERT INTO \`${comment_table}\` (board_num, board_comment_num, commenter, comment_board, comment_password) VALUES (?, ?, ?, ?, ?)`, [board_num, board_comment_num, commenter, comments, passwords], function(err, rows) {
-        //   if(err) {
-        //     throw err
-        //   } else {
-        //     console.log("no err")
-        //   }
-        //   response.writeHead(302, {Location: `/${filteredpage}/${filteredId}`});
-        //   response.end();
-        // });
-  
+        }  
     });
 }
   
 exports.page_pageId_num_delete_comment = function(request, response) {
     // posts.comment_delete_process(request, response);
-    var filteredpage = path.parse(request.params.page).base;
-    var filteredId = path.parse(request.params.pageId).base;
-    var comment_num = path.parse(request.params.num).base;
+    var filteredpage = request.params.page;
+    var filteredId = request.params.pageId;
+    var comment_num = request.params.num;
     var passwords = request.body.password;
   
   
@@ -149,18 +135,18 @@ exports.page_pageId_num_delete_comment = function(request, response) {
   
       if (passwords === password) {
           connection_comment.query(`DELETE FROM \`${comment_table}\` WHERE board_num = ${filteredId} AND board_comment_num = '${comment_num}'`, function(err2, rows) {
-            response.send(`<script>alert("글이 삭제되었습니다.");location.href="/${filteredpage}/${filteredId}";</script>`);
+            response.send(`<script>alert("글이 삭제되었습니다.");location.href="/${filteredpage}/${filteredId}/";</script>`);
           });
       } else {
-        response.send(`<script>alert("비밀번호가 틀렸습니다.");location.href="/${filteredpage}/${filteredId}";</script>`);
+        response.send(`<script>alert("비밀번호가 틀렸습니다.");location.href="/${filteredpage}/${filteredId}/";</script>`);
       }
     });
 }
   
 exports.page_pageId_delete_process = function(request, response) {
     // posts.delete_process(request, response);
-    var filteredpage = path.parse(request.params.page).base;
-    var filteredId = path.parse(request.params.pageId).base;
+    var filteredpage = request.params.page;
+    var filteredId = request.params.pageId;
     var passwords = request.body.password;
   
   
@@ -168,14 +154,14 @@ exports.page_pageId_delete_process = function(request, response) {
     
     connection.query(`SELECT * FROM \`${filteredpage}\` WHERE num = '${filteredId}'`, function(err, rows) {
       var file = rows[0].filepath;
-      var path = __dirname + '/uploads/' + file;
+      var path = __dirname + "/../../uploads/" + file;
       var password = rows[0].password;
   
       if (passwords === password) {
         if(file === '') {
           connection.query(`DELETE FROM \`${filteredpage}\` WHERE num='${filteredId}'`, function(err2, rows) {
             connection_comment.query(`DELETE FROM \`${comment_table}\` WHERE board_num='${filteredId}'`, function(err3, rows) {
-               response.send(`<script>alert("글이 삭제되었습니다.");location.href="/${filteredpage}";</script>`);
+               response.send(`<script>alert("글이 삭제되었습니다.");location.href="/${filteredpage}/";</script>`);
             });
           });
         } else {
@@ -185,12 +171,12 @@ exports.page_pageId_delete_process = function(request, response) {
           });
           connection.query(`DELETE FROM \`${filteredpage}\` WHERE num='${filteredId}'`, function(err2, rows) {
             connection_comment.query(`DELETE FROM \`${comment_table}\` WHERE board_num='${filteredId}'`, function(err3, rows) {
-              response.send(`<script>alert("글이 삭제되었습니다.");location.href="/${filteredpage}";</script>`);
+              response.send(`<script>alert("글이 삭제되었습니다.");location.href="/${filteredpage}/";</script>`);
             });
           });
         }
       } else {
-        response.send(`<script>alert("비밀번호가 틀렸습니다.");location.href="/${filteredpage}";</script>`);
+        response.send(`<script>alert("비밀번호가 틀렸습니다.");location.href="/${filteredpage}/";</script>`);
       }
     });   
 }
@@ -198,8 +184,8 @@ exports.page_pageId_delete_process = function(request, response) {
 exports.page_pageId_update_process = function(request, response) {
     // posts.update_process(request, response);
   
-    var filteredpage = path.parse(request.params.page).base;
-    var filteredId = path.parse(request.params.pageId).base;
+    var filteredpage = request.params.page;
+    var filteredId = request.params.pageId;
   
     var title = request.body.title;
     var author = request.body.author;
@@ -220,31 +206,10 @@ exports.page_pageId_update_process = function(request, response) {
           var descriptions = description.toString().replace(/\n/gi,"<br><br>"); 
     
           connection.query(`UPDATE \`${filteredpage}\` SET title=?, author=?, board=?, time=NOW(), filepath=? WHERE num='${filteredId}'`, [title, author, descriptions, filenames], function(error, result) {
-            response.writeHead(302, {Location: `/${filteredpage}`});
-            response.end();
+            response.send(`<script>alert("글이 수정되었습니다.");location.href="/${filteredpage}/${filteredId}";</script>`);
           });
         } else {
           response.send(`<script>alert("비밀번호가 틀렸습니다.");location.href="/${filteredpage}/${filteredId}/uploadform";</script>`);
         }
-    });
-}
-  
-exports.page_pageId_PasswordCheck = function(request, response) {
-  
-    var filteredpage = path.parse(request.params.page).base;
-    var filteredId = path.parse(request.params.pageId).base;
-    var passwords = request.body.password;
-  
-  
-    connection.query(`SELECT password FROM \`${filteredpage}\` WHERE num = '${filteredId}'`, function(err, pword) {
-      var password = pword[0].password;
-  
-      if (passwords === password) {
-        response.writeHead(302, {Location: `/${filteredpage}/${filteredId}/uploadform`});
-        response.end();
-      } else {
-        response.send(`<script>alert("비밀번호가 틀렸습니다.");location.href="/${filteredpage}";</script>`);
-      
-      }
     });
 }

@@ -2,16 +2,20 @@ var express    = require('express');
 var app = express();
 var multer = require('multer');
 var bodyParser = require("body-parser");
+var moment = require('moment');
+var date = moment().format('YYYYMMDD_HHmmss');
 
 var get = require('./public/lib/get');
 var post = require('./public/lib/post');
+
+
 
 var _storage = multer.diskStorage({                   // multer를 이용한 파일 업로드에서 지정한 파일 이름으로 업로드
   destination: function (request, file, cb) {
     cb(null, 'uploads/')
   },
   filename: function (request, file, cb) {
-    cb(null, file.originalname);
+    cb(null, date + "_" + file.originalname);
   }
 });
 
@@ -45,7 +49,6 @@ app.post('/:page/:pageId/comment_upload', post.page_pageId_comment_upload);
 app.post('/:page/:pageId/:num/delete_comment', post.page_pageId_num_delete_comment);
 app.post('/:page/:pageId/delete_process', post.page_pageId_delete_process);
 app.post('/:page/:pageId/update_process', upload.single('upload_Files'), post.page_pageId_update_process);
-app.post('/:page/:pageId/PasswordCheck', post.page_pageId_PasswordCheck);
 
 app.listen(app.get('port'), function () {
   console.log('Express server listening on port ' + app.get('port'));

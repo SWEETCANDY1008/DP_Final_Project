@@ -12,4 +12,3 @@ exports.table = function(tables) {
         list: list
     }
   }
-  
